@@ -3,6 +3,7 @@ package pt.ulusofona.aed.deisimdb;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 enum TipoEntidade {
@@ -156,10 +157,10 @@ public class Main {
 
     static boolean parseFilmes(File file) {
 
-        // Limpa a lista anterior
         filmes.clear();
 
-        // Variaveis para contar erros e detetar linhas
+        List<Integer> idsEncontrados = new ArrayList<>();
+
         int linhaAtual = 0;
         int linhasOk = 0;
         int linhasComErro = 0;
@@ -168,33 +169,25 @@ public class Main {
 
         try (Scanner scanner = new Scanner(file)) {
 
-            // Para ignorar a primeira linha (o cabeçalho)
             if (scanner.hasNextLine()) {
                 scanner.nextLine();
             }
 
-            // Enquanto houver linhas para ler
             while (scanner.hasNextLine()) {
                 String linha = scanner.nextLine().trim();
 
-                // Conta a linha atual
                 linhaAtual++;
 
-                // Se a linha estiver vazia salta para a próxima
                 if (linha.isEmpty()) {
                     continue;
                 }
 
-                // Divide a linha nas partes
                 String[] partes = linha.split(",");
 
-                // Linha ainda nao é invalida....
                 boolean linhaInvalida = false;
 
-                // Se a linha tiver partes a mais, a linha é inválida e será contabilizada mais abaixo
                 if (partes.length != 5) {
                     linhaInvalida = true;
-                    // Caso tenha as partes certas tenta atribuir os valores a cada atributo
                 } else {
                     try {
                         int movieid = Integer.parseInt(partes[0].trim());
@@ -203,34 +196,29 @@ public class Main {
                         float movieBudget = Float.parseFloat(partes[3].trim());
                         String releaseDate = partes[4].trim();
 
-                        // Deteta se ja foi lido um filme com o id nesta linha
-                        boolean idExiste = false;
-                        for (Filme filme : filmes) {
-                            if (filme.id == movieid) {
-                                idExiste = true;
-                                break;
-                            }
+                        if (partes[0].isEmpty() ||
+                                partes[1].isEmpty() ||
+                                partes[2].isEmpty() ||
+                                partes[3].isEmpty() ||
+                                partes[4].isEmpty()) {
+                            linhaInvalida = true;
                         }
 
-                        // Se sim a linha é invalida e será contabilizada mais abaixo
-                        if (idExiste) {
+
+                        if (idsEncontrados.contains(movieid)) {
                             linhaInvalida = true;
-                            // Se nao adiciono esta linha (filme) à lista de filmes
                         } else {
+                            idsEncontrados.add(movieid);
                             Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
                             filmes.add(filme);
-                            System.out.println("Adicionado filme");
                         }
 
-                        // Caso nao consiga ler a linha para os atributos corretamente marca a linha como invalida
                     } catch (NumberFormatException e) {
                         linhaInvalida = true;
                     }
                 }
 
-                // Se a linha foi marcada com invalida durante o ciclo contabiliza o erro.
                 if (linhaInvalida) {
-                    // Se for a primeira linha guarda o numero da linha
                     if (ePrimeiraComErro) {
                         primeiraLinhaComErro = linhaAtual;
                         ePrimeiraComErro = false;
@@ -241,24 +229,18 @@ public class Main {
                 }
             }
 
-            // Guarda o registo da leitura (objeto InvalidInput) na lista invalidInputs
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
-
-            // Se chegou aqui conseguiu abrir o ficheiro
             return true;
         } catch (FileNotFoundException e) {
-            // Se chegou aqui não conseguiu abrir o ficheiro
             return false;
         }
     }
 
     static boolean parseAtores(File file) {
 
-        // Limpa a lista anterior
         atores.clear();
 
-        // Variáveis para contar erros e detectar linhas
         int linhaAtual = 0;
         int linhasOk = 0;
         int linhasComErro = 0;
@@ -267,28 +249,22 @@ public class Main {
 
         try (Scanner scanner = new Scanner(file)) {
 
-            // Ignorar a primeira linha (cabeçalho)
             if (scanner.hasNextLine()) {
                 scanner.nextLine();
             }
 
-            // Ler cada linha do arquivo
             while (scanner.hasNextLine()) {
                 String linha = scanner.nextLine().trim();
 
-                // Conta a linha atual
                 linhaAtual++;
 
-                // Ignora linhas vazias
                 if (linha.isEmpty()) {
                     continue;
                 }
 
-                // Separa os dados
                 String[] partes = linha.split(",");
                 boolean linhaInvalida = false;
 
-                // Verifica se a linha tem a quantidade de dados correta
                 if (partes.length != 4) {
                     linhaInvalida = true;
                 } else {
@@ -298,29 +274,23 @@ public class Main {
                         char gender = partes[2].trim().charAt(0);
                         int movieid = Integer.parseInt(partes[3].trim());
 
-                        // Verifica se existem entradas duplicadas
-                        boolean duplicado = false;
-                        for (Ator ator : atores) {
-                            if (ator.id == id && ator.movieid == movieid) {
-                                duplicado = true;
-                                break;
-                            }
+                        if (partes[0].isEmpty() ||
+                                partes[1].isEmpty() ||
+                                partes[2].isEmpty() ||
+                                partes[3].isEmpty()) {
+                            linhaInvalida = true;
                         }
 
-                        // Se é duplicado marca linha como invalida
-                        if (duplicado) {
-                            linhaInvalida = true;
-                        } else {
-                            // Adiciona o ator à lista
+                        boolean duplicados = false;
+
                             Ator ator = new Ator(id, name, gender, movieid);
                             atores.add(ator);
-                        }
+
                     } catch (NumberFormatException | IndexOutOfBoundsException e) {
                         linhaInvalida = true;
                     }
                 }
 
-                // Contabiliza o erro se a linha for inválida
                 if (linhaInvalida) {
                     if (ePrimeiraComErro) {
                         primeiraLinhaComErro = linhaAtual;
@@ -332,7 +302,6 @@ public class Main {
                 }
             }
 
-            // Guardaas informações sobre a leitura
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
 
@@ -344,11 +313,8 @@ public class Main {
 
     static boolean parseRealizadores(File file) {
 
-
-        // Limpa a lista anterior
         realizadores.clear();
 
-        // Variaveis para contar erros e detetar linhas
         int linhaAtual = 0;
         int linhasOk = 0;
         int linhasComErro = 0;
@@ -357,41 +323,38 @@ public class Main {
 
         try (Scanner scanner = new Scanner(file)) {
 
-            // Para ignorar a primeira linha (o cabeçalho)
             if (scanner.hasNextLine()) {
                 scanner.nextLine();
             }
 
-            // Enquanto houver linhas para ler
             while (scanner.hasNextLine()) {
                 String linha = scanner.nextLine().trim();
 
-                // Conta a linha atual
                 linhaAtual++;
 
-                // Se a linha estiver vazia salta para a próxima
                 if (linha.isEmpty()) {
                     continue;
                 }
 
-                // Divide a linha nas partes
                 String[] partes = linha.split(",");
 
-                // Linha ainda nao é invalida....
                 boolean linhaInvalida = false;
 
-                // Se a linha tiver partes a mais, a linha é inválida e será contabilizada mais abaixo
                 if (partes.length != 3) {
                     linhaInvalida = true;
 
-                    // Caso tenha as partes certas tenta atribuir os valores a cada atributo
                 } else {
                     try {
                         int directorid = Integer.parseInt(partes[0].trim());
                         String directorName = partes[1].trim();
                         int movieid = Integer.parseInt(partes[2].trim());
 
-                        // Deteta se duplicado
+                        if (partes[0].isEmpty() ||
+                                partes[1].isEmpty() ||
+                                partes[2].isEmpty()){
+                            linhaInvalida = true;
+                        }
+
                         boolean duplicado = false;
                         for (Realizador realizador : realizadores) {
                             if (realizador.id == directorid && realizador.movieid == movieid) {
@@ -400,25 +363,20 @@ public class Main {
                             }
                         }
 
-                        // Se sim a linha é invalida e será contabilizada mais abaixo
                         if (duplicado) {
                             linhaInvalida = true;
 
-                            // Se nao adiciono esta linha (realizador) à lista de filmes
                         } else {
                             Realizador realizador = new Realizador(directorid, directorName, movieid);
                             realizadores.add(realizador);
                         }
 
-                        // Caso nao consiga ler a linha para os atributos corretamente marca a linha como invalida
                     } catch (NumberFormatException e) {
                         linhaInvalida = true;
                     }
                 }
 
-                // Se a linha foi marcada com invalida durante o ciclo contabiliza o erro.
                 if (linhaInvalida) {
-                    // Se for a primeira linha guarda o numero da linha
                     if (ePrimeiraComErro) {
                         primeiraLinhaComErro = linhaAtual;
                         ePrimeiraComErro = false;
@@ -429,24 +387,21 @@ public class Main {
                 }
             }
 
-            // Guarda o registo da leitura (objeto InvalidInput) na lista invalidInputs
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
 
-            // Se chegou aqui conseguiu abrir o ficheiro
             return true;
         } catch (FileNotFoundException e) {
-            // Se chegou aqui não conseguiu abrir o ficheiro
             return false;
         }
     }
 
     static boolean parseGeneros(File file) {
 
-        // Limpa a lista anterior
         generos.clear();
 
-        // Variaveis para contar erros e detetar linhas
+        List<Integer> idsEncontrados = new ArrayList<>();
+
         int linhaAtual = 0;
         int linhasOk = 0;
         int linhasComErro = 0;
@@ -455,66 +410,49 @@ public class Main {
 
         try (Scanner scanner = new Scanner(file)) {
 
-            // Para ignorar a primeira linha (o cabeçalho)
             if (scanner.hasNextLine()) {
                 scanner.nextLine();
             }
 
-            // Enquanto houver linhas para ler
             while (scanner.hasNextLine()) {
                 String linha = scanner.nextLine().trim();
 
-                // Conta a linha atual
                 linhaAtual++;
 
-                // Se a linha estiver vazia salta para a próxima
                 if (linha.isEmpty()) {
                     continue;
                 }
 
-                // Divide a linha nas partes
                 String[] partes = linha.split(",");
 
-                // Linha ainda nao é invalida....
                 boolean linhaInvalida = false;
 
-                // Se a linha tiver partes a mais, a linha é inválida e será contabilizada mais abaixo
                 if (partes.length != 2) {
                     linhaInvalida = true;
-                    // Caso tenha as partes certas tenta atribuir os valores a cada atributo
                 } else {
                     try {
                         int genreid = Integer.parseInt(partes[0].trim());
                         String genreName = partes[1].trim();
 
-                        // Deteta se ja foi lido um filme com o id nesta linha
-                        boolean idExiste = false;
-                        for (GeneroCinematografico genero : generos) {
-                            if (genero.id == genreid) {
-                                idExiste = true;
-                                break;
-                            }
+                        if (partes[0].isEmpty() ||
+                                partes[1].isEmpty()) {
+                            linhaInvalida = true;
                         }
 
-                        // Se sim a linha é invalida e será contabilizada mais abaixo
-                        if (idExiste) {
+                        if (idsEncontrados.contains(genreid)) {
                             linhaInvalida = true;
-
-                            // Se nao adiciono esta linha (genero) à lista de filmes
                         } else {
+                            idsEncontrados.add(genreid);
                             GeneroCinematografico genero = new GeneroCinematografico(genreid, genreName);
                             generos.add(genero);
                         }
 
-                        // Caso nao consiga ler a linha para os atributos corretamente marca a linha como invalida
                     } catch (NumberFormatException e) {
                         linhaInvalida = true;
                     }
                 }
 
-                // Se a linha foi marcada com invalida durante o ciclo contabiliza o erro.
                 if (linhaInvalida) {
-                    // Se for a primeira linha guarda o numero da linha
                     if (ePrimeiraComErro) {
                         primeiraLinhaComErro = linhaAtual;
                         ePrimeiraComErro = false;
@@ -525,21 +463,16 @@ public class Main {
                 }
             }
 
-            // Guarda o registo da leitura (objeto InvalidInput) na lista invalidInputs
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
-
-            // Se chegou aqui conseguiu abrir o ficheiro
             return true;
         } catch (FileNotFoundException e) {
-            // Se chegou aqui não conseguiu abrir o ficheiro
             return false;
         }
     }
 
-    static boolean parseGenerosFilme(File file) {
+    static boolean parseGeneroDoFilme(File file) {
 
-        // Variaveis para contar erros e detetar linhas
         int linhaAtual = 0;
         int linhasOk = 0;
         int linhasComErro = 0;
@@ -548,37 +481,34 @@ public class Main {
 
         try (Scanner scanner = new Scanner(file)) {
 
-            // Para ignorar a primeira linha (o cabeçalho)
             if (scanner.hasNextLine()) {
                 scanner.nextLine();
             }
 
-            // Enquanto houver linhas para ler
             while (scanner.hasNextLine()) {
                 String linha = scanner.nextLine().trim();
 
-                // Conta a linha atual
                 linhaAtual++;
 
-                // Se a linha estiver vazia salta para a próxima
                 if (linha.isEmpty()) {
                     continue;
                 }
 
-                // Divide a linha nas partes
                 String[] partes = linha.split(",");
 
-                // Linha ainda nao é invalida....
                 boolean linhaInvalida = false;
 
-                // Se a linha tiver partes a mais, a linha é inválida e será contabilizada mais abaixo
                 if (partes.length != 2) {
                     linhaInvalida = true;
-                    // Caso tenha as partes certas tenta atribuir os valores a cada atributo
                 } else {
                     try {
                         int genreid = Integer.parseInt(partes[0].trim());
                         int movieid = Integer.parseInt(partes[1].trim());
+
+                        if (partes[0].isEmpty() ||
+                                partes[1].isEmpty()) {
+                            linhaInvalida = true;
+                        }
 
                         String genreName = null;
                         for (GeneroCinematografico genero : generos) {
@@ -596,15 +526,12 @@ public class Main {
                                 }
                             }
                         }
-                        // Caso nao consiga ler a linha para os atributos corretamente marca a linha como invalida
                     } catch (NumberFormatException e) {
                         linhaInvalida = true;
                     }
                 }
 
-                // Se a linha foi marcada com invalida durante o ciclo contabiliza o erro.
                 if (linhaInvalida) {
-                    // Se for a primeira linha guarda o numero da linha
                     if (ePrimeiraComErro) {
                         primeiraLinhaComErro = linhaAtual;
                         ePrimeiraComErro = false;
@@ -615,19 +542,16 @@ public class Main {
                 }
             }
 
-            // Guarda o registo da leitura (objeto InvalidInput) na lista invalidInputs
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
-
-            // Se chegou aqui conseguiu abrir o ficheiro
             return true;
         } catch (FileNotFoundException e) {
-            // Se chegou aqui não conseguiu abrir o ficheiro
             return false;
         }
     }
 
     static boolean parseVotosFilme(File file) {
+
         int linhaAtual = 0;
         int linhasOk = 0;
         int linhasComErro = 0;
@@ -653,6 +577,12 @@ public class Main {
                         float movieRating = Float.parseFloat(partes[1].trim());
                         int movieRatingCount = Integer.parseInt(partes[2].trim());
 
+                        if (partes[0].isEmpty() ||
+                                partes[1].isEmpty() ||
+                                partes[2].isEmpty()) {
+                            linhaInvalida = true;
+                        }
+
                         for (Filme filme : filmes) {
                             if (filme.id == movieid) {
                                 filme.setRating(movieRating, movieRatingCount);
@@ -668,7 +598,6 @@ public class Main {
                 }
 
                 if (linhaInvalida) {
-                    // Se for a primeira linha guarda o numero da linha
                     if (ePrimeiraComErro) {
                         primeiraLinhaComErro = linhaAtual;
                         ePrimeiraComErro = false;
@@ -679,27 +608,27 @@ public class Main {
                 }
             }
 
-
-            // Guarda o registo da leitura (objeto InvalidInput) na lista invalidInputs
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
 
-            // Se chegou aqui conseguiu abrir o ficheiro
             return true;
         } catch (FileNotFoundException e) {
-            // Se chegou aqui não conseguiu abrir o ficheiro
             return false;
         }
     }
 
     static boolean parseFiles(File pasta) {
+
+        invalidInputs.clear();
+
         return parseFilmes(new File(pasta, "movies.csv")) &&
                 parseAtores(new File(pasta, "actors.csv")) &&
                 parseRealizadores(new File(pasta, "directors.csv")) &&
                 parseGeneros(new File(pasta, "genres.csv")) &&
-                parseVotosFilme(new File(pasta, "movie_votes.csv")) &&
-                parseGenerosFilme(new File(pasta, "genres_movies.csv"));
+                parseGeneroDoFilme(new File(pasta, "genres_movies.csv")) &&
+                parseVotosFilme(new File(pasta, "movie_votes.csv"));
     }
+
 
     static ArrayList<?> getObjects(TipoEntidade entidade) {
         return switch (entidade) {
