@@ -59,7 +59,7 @@ class Filme {
     @Override
     public String toString() {
         if (this.id < 1000) {
-            return this.id + " | " + this.name + " | "  + dateToYYYY_MM_DD(realese) + " | " + this.numeroAtores;
+            return this.id + " | " + this.name + " | " + dateToYYYY_MM_DD(realese) + " | " + this.numeroAtores;
         }
         return this.id + " | " + this.name + " | " + dateToYYYY_MM_DD(realese);
     }
@@ -188,46 +188,53 @@ public class Main {
                 String linha = scanner.nextLine().trim();
 
                 linhaAtual++;
-
-                if (linha.isEmpty()) {
-                    continue;
-                }
-
-                String[] partes = linha.split(",");
-
                 boolean linhaInvalida = false;
 
-                if (partes.length != 5) {
+                if (linha.isEmpty()) {
                     linhaInvalida = true;
                 } else {
-                    try {
-                        int movieid = Integer.parseInt(partes[0].trim());
-                        String movieName = partes[1].trim();
-                        float movieDuration = Float.parseFloat(partes[2].trim());
-                        float movieBudget = Float.parseFloat(partes[3].trim());
-                        String releaseDate = partes[4].trim();
 
-                        if (partes[0].isEmpty() ||
-                                partes[1].isEmpty() ||
-                                partes[2].isEmpty() ||
-                                partes[3].isEmpty() ||
-                                partes[4].isEmpty()) {
-                            linhaInvalida = true;
-                        }
+                    String[] partes = linha.split(",");
 
-
-                        if (idsEncontrados.contains(movieid)) {
-                            linhaInvalida = true;
-                        } else {
-
-                            idsEncontrados.add(movieid);
-                            Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
-                            filmes.add(filme);
-                        }
-
-                    } catch (NumberFormatException e) {
+                    if (partes.length != 5) {
                         linhaInvalida = true;
+                    } else {
+                        try {
+
+                            int movieid = 0;
+                            String movieName = "";
+                            float movieDuration = 0;
+                            float movieBudget = 0;
+                            String releaseDate = "";
+
+                            if (partes[0].trim().isEmpty() ||
+                                    partes[1].trim().isEmpty() ||
+                                    partes[2].trim().isEmpty() ||
+                                    partes[3].trim().isEmpty() ||
+                                    partes[4].trim().isEmpty()) {
+                                linhaInvalida = true;
+                            } else {
+
+                                movieid = Integer.parseInt(partes[0].trim());
+                                movieName = partes[1].trim();
+                                movieDuration = Float.parseFloat(partes[2].trim());
+                                movieBudget = Float.parseFloat(partes[3].trim());
+                                releaseDate = partes[4].trim();
+
+
+                                boolean filmeDuplicado = idsEncontrados.contains(movieid);
+                                if (!filmeDuplicado) {
+                                    idsEncontrados.add(movieid);
+                                    Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
+                                    filmes.add(filme);
+                                }
+                            }
+
+                        } catch (NumberFormatException e) {
+                            linhaInvalida = true;
+                        }
                     }
+
                 }
 
                 if (linhaInvalida) {
@@ -281,20 +288,27 @@ public class Main {
                     linhaInvalida = true;
                 } else {
                     try {
-                        int id = Integer.parseInt(partes[0].trim());
-                        String name = partes[1].trim();
-                        char gender = partes[2].trim().charAt(0);
-                        int movieid = Integer.parseInt(partes[3].trim());
+
+                        int id = 0;
+                        String name = "";
+                        char gender = ' ';
+                        int movieid = 0;
 
                         if (partes[0].isEmpty() ||
                                 partes[1].isEmpty() ||
                                 partes[2].isEmpty() ||
                                 partes[3].isEmpty()) {
                             linhaInvalida = true;
+                        } else {
+
+                            id = Integer.parseInt(partes[0].trim());
+                            name = partes[1].trim();
+                            gender = partes[2].trim().charAt(0);
+                            movieid = Integer.parseInt(partes[3].trim());
                         }
 
                         for (Filme filme : filmes) {
-                            if (movieid == filme.id){
+                            if (movieid == filme.id) {
                                 filme.numeroAtores++;
                             }
                         }
@@ -361,15 +375,22 @@ public class Main {
 
                 } else {
                     try {
-                        int directorid = Integer.parseInt(partes[0].trim());
-                        String directorName = partes[1].trim();
-                        int movieid = Integer.parseInt(partes[2].trim());
+
+                        int directorid = 0;
+                        String directorName = "";
+                        int movieid = 0;
 
                         if (partes[0].isEmpty() ||
                                 partes[1].isEmpty() ||
                                 partes[2].isEmpty()) {
                             linhaInvalida = true;
+                        } else {
+
+                            directorid = Integer.parseInt(partes[0].trim());
+                            directorName = partes[1].trim();
+                            movieid = Integer.parseInt(partes[2].trim());
                         }
+
 
                         boolean duplicado = false;
                         for (Realizador realizador : realizadores) {
@@ -447,12 +468,16 @@ public class Main {
                     linhaInvalida = true;
                 } else {
                     try {
-                        int genreid = Integer.parseInt(partes[0].trim());
-                        String genreName = partes[1].trim();
+
+                        int genreid = 0;
+                        String genreName = "";
 
                         if (partes[0].isEmpty() ||
                                 partes[1].isEmpty()) {
                             linhaInvalida = true;
+                        } else {
+                            genreid = Integer.parseInt(partes[0].trim());
+                            genreName = partes[1].trim();
                         }
 
                         if (idsEncontrados.contains(genreid)) {
@@ -518,12 +543,16 @@ public class Main {
                     linhaInvalida = true;
                 } else {
                     try {
-                        int genreid = Integer.parseInt(partes[0].trim());
-                        int movieid = Integer.parseInt(partes[1].trim());
+
+                        int genreid = 0;
+                        int movieid = 0;
 
                         if (partes[0].isEmpty() ||
                                 partes[1].isEmpty()) {
                             linhaInvalida = true;
+                        } else {
+                            genreid = Integer.parseInt(partes[0].trim());
+                            movieid = Integer.parseInt(partes[1].trim());
                         }
 
                         String genreName = null;
@@ -589,15 +618,22 @@ public class Main {
 
                 if (partes.length == 3) {
                     try {
-                        int movieid = Integer.parseInt(partes[0].trim());
-                        float movieRating = Float.parseFloat(partes[1].trim());
-                        int movieRatingCount = Integer.parseInt(partes[2].trim());
+
+                        int movieid = 0;
+                        float movieRating = 0;
+                        int movieRatingCount = 0;
+
 
                         if (partes[0].isEmpty() ||
                                 partes[1].isEmpty() ||
                                 partes[2].isEmpty()) {
                             linhaInvalida = true;
+                        } else {
+                            movieid = Integer.parseInt(partes[0].trim());
+                            movieRating = Float.parseFloat(partes[1].trim());
+                            movieRatingCount = Integer.parseInt(partes[2].trim());
                         }
+
 
                         for (Filme filme : filmes) {
                             if (filme.id == movieid) {
