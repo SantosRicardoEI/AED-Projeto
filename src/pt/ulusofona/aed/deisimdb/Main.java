@@ -23,6 +23,7 @@ class Filme {
     ArrayList<String> genres;
     float rating;
     int ratingCount;
+    int numeroAtores;
 
     public Filme(int id, String name, String realese) {
         this.id = id;
@@ -33,7 +34,8 @@ class Filme {
         this.ratingCount = 0;
     }
 
-    public Filme(int id, String name, String realese, float duration, float budget) {
+
+    public Filme(int id, String name, String realese, float duration, float budget, int numeroAtores) {
         this.id = id;
         this.name = name;
         this.realese = realese;
@@ -42,6 +44,7 @@ class Filme {
         this.budget = budget;
         this.rating = 0.0f;
         this.ratingCount = 0;
+        this.numeroAtores = numeroAtores;
     }
 
     public void adicionarGenero(String genre) {
@@ -55,6 +58,9 @@ class Filme {
 
     @Override
     public String toString() {
+        if (this.id < 1000) {
+            return this.id + " | " + this.name + " | " + this.numeroAtores;
+        }
         return this.id + " | " + this.name + " | " + dateToYYYY_MM_DD(realese);
     }
 
@@ -133,6 +139,9 @@ class InvalidInput {
     int invalidLines;
     int firstErrorLine;
 
+    public InvalidInput() {
+    }
+
     public InvalidInput(String fileName, int validLines, int invalidLines, int firstErrorLine) {
         this.fileName = fileName;
         this.validLines = validLines;
@@ -152,7 +161,9 @@ public class Main {
     static ArrayList<Ator> atores = new ArrayList<Ator>();
     static ArrayList<GeneroCinematografico> generos = new ArrayList<GeneroCinematografico>();
     static ArrayList<Realizador> realizadores = new ArrayList<Realizador>();
-    static ArrayList<InvalidInput> invalidInputs = new ArrayList<InvalidInput>();
+    static InvalidInput vazio = new InvalidInput();
+    static ArrayList<InvalidInput> invalidInputs = new ArrayList<InvalidInput>() {
+    };
 
 
     static boolean parseFilmes(File file) {
@@ -183,6 +194,7 @@ public class Main {
                 }
 
                 String[] partes = linha.split(",");
+                int numeroAtores = 0;
 
                 boolean linhaInvalida = false;
 
@@ -204,12 +216,21 @@ public class Main {
                             linhaInvalida = true;
                         }
 
+                        if (movieid > 1000) {
+                            for (Ator ator : atores) {
+                                if (ator.movieid == movieid) {
+                                    numeroAtores++;
+                                }
+                            }
+                        }
+
 
                         if (idsEncontrados.contains(movieid)) {
                             linhaInvalida = true;
                         } else {
+
                             idsEncontrados.add(movieid);
-                            Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
+                            Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget, numeroAtores);
                             filmes.add(filme);
                         }
 
@@ -281,10 +302,8 @@ public class Main {
                             linhaInvalida = true;
                         }
 
-                        boolean duplicados = false;
-
-                            Ator ator = new Ator(id, name, gender, movieid);
-                            atores.add(ator);
+                        Ator ator = new Ator(id, name, gender, movieid);
+                        atores.add(ator);
 
                     } catch (NumberFormatException | IndexOutOfBoundsException e) {
                         linhaInvalida = true;
@@ -304,6 +323,7 @@ public class Main {
 
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
+
 
             return true;
         } catch (FileNotFoundException e) {
@@ -351,7 +371,7 @@ public class Main {
 
                         if (partes[0].isEmpty() ||
                                 partes[1].isEmpty() ||
-                                partes[2].isEmpty()){
+                                partes[2].isEmpty()) {
                             linhaInvalida = true;
                         }
 
@@ -618,11 +638,8 @@ public class Main {
     }
 
     static boolean parseFiles(File pasta) {
-
-        invalidInputs.clear();
-
-        return parseFilmes(new File(pasta, "movies.csv")) &&
-                parseAtores(new File(pasta, "actors.csv")) &&
+        return parseAtores(new File(pasta, "actors.csv")) &&
+                parseFilmes(new File(pasta, "movies.csv")) &&
                 parseRealizadores(new File(pasta, "directors.csv")) &&
                 parseGeneros(new File(pasta, "genres.csv")) &&
                 parseGeneroDoFilme(new File(pasta, "genres_movies.csv")) &&
