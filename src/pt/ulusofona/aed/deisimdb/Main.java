@@ -35,7 +35,7 @@ class Filme {
     }
 
 
-    public Filme(int id, String name, String realese, float duration, float budget, int numeroAtores) {
+    public Filme(int id, String name, String realese, float duration, float budget) {
         this.id = id;
         this.name = name;
         this.realese = realese;
@@ -44,7 +44,7 @@ class Filme {
         this.budget = budget;
         this.rating = 0.0f;
         this.ratingCount = 0;
-        this.numeroAtores = numeroAtores;
+        this.numeroAtores = 0;
     }
 
     public void adicionarGenero(String genre) {
@@ -59,7 +59,7 @@ class Filme {
     @Override
     public String toString() {
         if (this.id < 1000) {
-            return this.id + " | " + this.name + " | " + this.numeroAtores;
+            return this.id + " | " + this.name + " | "  + dateToYYYY_MM_DD(realese) + " | " + this.numeroAtores;
         }
         return this.id + " | " + this.name + " | " + dateToYYYY_MM_DD(realese);
     }
@@ -194,7 +194,6 @@ public class Main {
                 }
 
                 String[] partes = linha.split(",");
-                int numeroAtores = 0;
 
                 boolean linhaInvalida = false;
 
@@ -216,21 +215,13 @@ public class Main {
                             linhaInvalida = true;
                         }
 
-                        if (movieid > 1000) {
-                            for (Ator ator : atores) {
-                                if (ator.movieid == movieid) {
-                                    numeroAtores++;
-                                }
-                            }
-                        }
-
 
                         if (idsEncontrados.contains(movieid)) {
                             linhaInvalida = true;
                         } else {
 
                             idsEncontrados.add(movieid);
-                            Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget, numeroAtores);
+                            Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
                             filmes.add(filme);
                         }
 
@@ -302,6 +293,12 @@ public class Main {
                             linhaInvalida = true;
                         }
 
+                        for (Filme filme : filmes) {
+                            if (movieid == filme.id){
+                                filme.numeroAtores++;
+                            }
+                        }
+
                         Ator ator = new Ator(id, name, gender, movieid);
                         atores.add(ator);
 
@@ -323,7 +320,6 @@ public class Main {
 
             InvalidInput invalidInput = new InvalidInput(file.getName(), linhasOk, linhasComErro, primeiraLinhaComErro);
             invalidInputs.add(invalidInput);
-
 
             return true;
         } catch (FileNotFoundException e) {
@@ -638,8 +634,8 @@ public class Main {
     }
 
     static boolean parseFiles(File pasta) {
-        return parseAtores(new File(pasta, "actors.csv")) &&
-                parseFilmes(new File(pasta, "movies.csv")) &&
+        return parseFilmes(new File(pasta, "movies.csv")) &&
+                parseAtores(new File(pasta, "actors.csv")) &&
                 parseRealizadores(new File(pasta, "directors.csv")) &&
                 parseGeneros(new File(pasta, "genres.csv")) &&
                 parseGeneroDoFilme(new File(pasta, "genres_movies.csv")) &&
@@ -693,6 +689,8 @@ public class Main {
         imprimirListaEntidade(TipoEntidade.INPUT_INVALIDO);
         System.out.println();
         System.out.println("Ficheiros lidos com sucesso em " + (end - start) + " ms");
+
+        imprimirListaEntidade(TipoEntidade.FILME);
 
 
     }
