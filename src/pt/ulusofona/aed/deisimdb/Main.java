@@ -161,12 +161,43 @@ public class Main {
     static ArrayList<Ator> atores = new ArrayList<Ator>();
     static ArrayList<GeneroCinematografico> generos = new ArrayList<GeneroCinematografico>();
     static ArrayList<Realizador> realizadores = new ArrayList<Realizador>();
-    static InvalidInput vazio = new InvalidInput();
     static ArrayList<InvalidInput> invalidInputs = new ArrayList<InvalidInput>() {
     };
 
+    static ArrayList<Integer> idsFilmes = new ArrayList<>();
+    static ArrayList<Integer> posicoesFilmes = new ArrayList<>();
+
+    static void atualizarIdsEPosicoesFilmes() {
+        idsFilmes.clear();
+        posicoesFilmes.clear();
+        for (int i = 0; i < filmes.size(); i++) {
+            idsFilmes.add(filmes.get(i).id);
+            posicoesFilmes.add(i);
+        }
+    }
+
     static void gravarInvalidInput(File file, int ok, int erro, int primeiraErro) {
         invalidInputs.add(new InvalidInput(file.getName(), ok, erro, primeiraErro));
+    }
+
+    static boolean temEspacosVazios(String... espacos) {
+        for (String espaco : espacos) {
+            if (espaco == null || espaco.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static void validarLinhas(boolean linhaInvalida, int linhaAtual, int[] invalidInput) {
+        if (linhaInvalida) {
+            invalidInput[1]++;
+            if (invalidInput[2] == -1) {
+                invalidInput[2] = linhaAtual;
+            }
+        } else {
+            invalidInput[0]++;
+        }
     }
 
 
@@ -177,9 +208,7 @@ public class Main {
         List<Integer> idsEncontrados = new ArrayList<>();
 
         int linhaAtual = 0;
-        int linhasOk = 0;
-        int linhasComErro = 0;
-        int primeiraLinhaComErro = -1;
+        int[] invalidInput = new int[]{0, 0, -1};
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -213,12 +242,10 @@ public class Main {
                             String budgetStr = partes[3].trim();
                             String dateStr = partes[4].trim();
 
-
-                            if (idStr.isEmpty() || nameStr.isEmpty() || durStr.isEmpty() || budgetStr.isEmpty() || dateStr.isEmpty()) {
+                            if (temEspacosVazios(idStr, nameStr, durStr, budgetStr, dateStr)) {
                                 linhaInvalida = true;
                             } else {
 
-                                // Utiliamos as variaveis criadas trimmed para evitar tantos .trims
                                 movieid = Integer.parseInt(idStr);
                                 movieName = nameStr;
                                 movieDuration = Float.parseFloat(durStr);
@@ -238,16 +265,10 @@ public class Main {
                         }
                     }
                 }
-                if (linhaInvalida) {
-                    linhasComErro++;
-                    if (primeiraLinhaComErro == -1) {
-                        primeiraLinhaComErro = linhaAtual;
-                    }
-                } else {
-                    linhasOk++;
-                }
+                validarLinhas(linhaInvalida, linhaAtual, invalidInput);
             }
-            gravarInvalidInput(file, linhasOk, linhasComErro, primeiraLinhaComErro);
+            gravarInvalidInput(file, invalidInput[0], invalidInput[1], invalidInput[2]);
+            atualizarIdsEPosicoesFilmes();
             return true;
         } catch (FileNotFoundException e) {
             return false;
@@ -257,11 +278,8 @@ public class Main {
     static boolean parseAtores(File file) {
 
         atores.clear();
-
         int linhaAtual = 0;
-        int linhasOk = 0;
-        int linhasComErro = 0;
-        int primeiraLinhaComErro = -1;
+        int[] invalidInput = new int[]{0, 0, -1};
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -277,56 +295,42 @@ public class Main {
                 if (linha.isEmpty()) {
                     linhaInvalida = true;
                 } else {
-
                     String[] partes = linha.split(",");
                     if (partes.length != 4) {
                         linhaInvalida = true;
                     } else {
                         try {
-                            int id = 0;
-                            String name = "";
-                            char gender = ' ';
-                            int movieid = 0;
-
                             String idStr = partes[0].trim();
                             String nameStr = partes[1].trim();
                             String genderStr = partes[2].trim();
                             String movieIdStr = partes[3].trim();
 
-                            if (idStr.isEmpty() || nameStr.isEmpty() || genderStr.isEmpty() || movieIdStr.isEmpty()) {
+                            if (temEspacosVazios(idStr, nameStr, genderStr, movieIdStr)) {
                                 linhaInvalida = true;
                             } else {
+                                int id = Integer.parseInt(idStr);
+                                String name = nameStr;
+                                char gender = genderStr.charAt(0);
+                                int movieid = Integer.parseInt(movieIdStr);
 
-                                id = Integer.parseInt(idStr);
-                                name = nameStr;
-                                gender = genderStr.charAt(0);
-                                movieid = Integer.parseInt(movieIdStr);
-                            }
-
-                            for (Filme filme : filmes) {
-                                if (movieid == filme.id) {
-                                    filme.numeroAtores++;
+                                for (int i = 0; i < idsFilmes.size(); i++) {
+                                    if (idsFilmes.get(i) == movieid) {
+                                        filmes.get(posicoesFilmes.get(i)).numeroAtores++;
+                                        break;
+                                    }
                                 }
+
+                                atores.add(new Ator(id, name, gender, movieid));
                             }
 
-                            Ator ator = new Ator(id, name, gender, movieid);
-                            atores.add(ator);
-
-                        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                        } catch (Exception e) {
                             linhaInvalida = true;
                         }
                     }
                 }
-                if (linhaInvalida) {
-                    linhasComErro++;
-                    if (primeiraLinhaComErro == -1) {
-                        primeiraLinhaComErro = linhaAtual;
-                    }
-                } else {
-                    linhasOk++;
-                }
+                validarLinhas(linhaInvalida, linhaAtual, invalidInput);
             }
-            gravarInvalidInput(file, linhasOk, linhasComErro, primeiraLinhaComErro);
+            gravarInvalidInput(file, invalidInput[0], invalidInput[1], invalidInput[2]);
             return true;
         } catch (FileNotFoundException e) {
             return false;
@@ -336,11 +340,8 @@ public class Main {
     static boolean parseRealizadores(File file) {
 
         realizadores.clear();
-
         int linhaAtual = 0;
-        int linhasOk = 0;
-        int linhasComErro = 0;
-        int primeiraLinhaComErro = -1;
+        int[] invalidInput = new int[]{0, 0, -1};
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -356,49 +357,33 @@ public class Main {
                 if (linha.isEmpty()) {
                     linhaInvalida = true;
                 } else {
-
                     String[] partes = linha.split(",");
                     if (partes.length != 3) {
                         linhaInvalida = true;
-
                     } else {
                         try {
-
-                            int directorid = 0;
-                            String directorName = "";
-                            int movieid = 0;
-
                             String idStr = partes[0].trim();
                             String nameStr = partes[1].trim();
                             String movieIdStr = partes[2].trim();
 
-                            if (idStr.isEmpty() || nameStr.isEmpty() || movieIdStr.isEmpty()) {
+                            if (temEspacosVazios(idStr, nameStr, movieIdStr)) {
                                 linhaInvalida = true;
                             } else {
+                                int id = Integer.parseInt(idStr);
+                                String name = nameStr;
+                                int movieid = Integer.parseInt(movieIdStr);
 
-                                directorid = Integer.parseInt(idStr);
-                                directorName = nameStr;
-                                movieid = Integer.parseInt(movieIdStr);
+                                realizadores.add(new Realizador(id, name, movieid));
                             }
 
-                            Realizador realizador = new Realizador(directorid, directorName, movieid);
-                            realizadores.add(realizador);
-
-                        } catch (NumberFormatException e) {
+                        } catch (Exception e) {
                             linhaInvalida = true;
                         }
                     }
                 }
-                if (linhaInvalida) {
-                    linhasComErro++;
-                    if (primeiraLinhaComErro == -1) {
-                        primeiraLinhaComErro = linhaAtual;
-                    }
-                } else {
-                    linhasOk++;
-                }
+                validarLinhas(linhaInvalida, linhaAtual, invalidInput);
             }
-            gravarInvalidInput(file, linhasOk, linhasComErro, primeiraLinhaComErro);
+            gravarInvalidInput(file, invalidInput[0], invalidInput[1], invalidInput[2]);
             return true;
         } catch (FileNotFoundException e) {
             return false;
@@ -408,13 +393,8 @@ public class Main {
     static boolean parseGeneros(File file) {
 
         generos.clear();
-
-        List<Integer> idsEncontrados = new ArrayList<>();
-
         int linhaAtual = 0;
-        int linhasOk = 0;
-        int linhasComErro = 0;
-        int primeiraLinhaComErro = -1;
+        int[] invalidInput = new int[]{0, 0, -1};
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -430,44 +410,31 @@ public class Main {
                 if (linha.isEmpty()) {
                     linhaInvalida = true;
                 } else {
-
                     String[] partes = linha.split(",");
                     if (partes.length != 2) {
                         linhaInvalida = true;
                     } else {
                         try {
-                            int genreid = 0;
-                            String genreName = "";
-
                             String idStr = partes[0].trim();
                             String nameStr = partes[1].trim();
 
-                            if (idStr.isEmpty() || nameStr.isEmpty()) {
+                            if (temEspacosVazios(idStr, nameStr)) {
                                 linhaInvalida = true;
                             } else {
-                                genreid = Integer.parseInt(idStr);
-                                genreName = nameStr;
+                                int id = Integer.parseInt(idStr);
+                                String name = nameStr;
 
-                                idsEncontrados.add(genreid);
-                                GeneroCinematografico genero = new GeneroCinematografico(genreid, genreName);
-                                generos.add(genero);
+                                generos.add(new GeneroCinematografico(id, name));
                             }
 
-                        } catch (NumberFormatException e) {
+                        } catch (Exception e) {
                             linhaInvalida = true;
                         }
                     }
                 }
-                if (linhaInvalida) {
-                    linhasComErro++;
-                    if (primeiraLinhaComErro == -1) {
-                        primeiraLinhaComErro = linhaAtual;
-                    }
-                } else {
-                    linhasOk++;
-                }
+                validarLinhas(linhaInvalida, linhaAtual, invalidInput);
             }
-            gravarInvalidInput(file, linhasOk, linhasComErro, primeiraLinhaComErro);
+            gravarInvalidInput(file, invalidInput[0], invalidInput[1], invalidInput[2]);
             return true;
         } catch (FileNotFoundException e) {
             return false;
@@ -477,9 +444,7 @@ public class Main {
     static boolean parseGeneroDoFilme(File file) {
 
         int linhaAtual = 0;
-        int linhasOk = 0;
-        int linhasComErro = 0;
-        int primeiraLinhaComErro = -1;
+        int[] invalidInput = new int[]{0, 0, -1};
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -495,25 +460,19 @@ public class Main {
                 if (linha.isEmpty()) {
                     linhaInvalida = true;
                 } else {
-
                     String[] partes = linha.split(",");
                     if (partes.length != 2) {
                         linhaInvalida = true;
                     } else {
                         try {
-
-                            // Vamos precisar depois
-                            int genreid = 0;
-                            int movieid = 0;
-
                             String genreIdStr = partes[0].trim();
                             String movieIdStr = partes[1].trim();
 
-                            if (genreIdStr.isEmpty() || movieIdStr.isEmpty()) {
+                            if (temEspacosVazios(genreIdStr, movieIdStr)) {
                                 linhaInvalida = true;
                             } else {
-                                genreid = Integer.parseInt(genreIdStr);
-                                movieid = Integer.parseInt(movieIdStr);
+                                int genreid = Integer.parseInt(genreIdStr);
+                                int movieid = Integer.parseInt(movieIdStr);
                             }
 
                         } catch (NumberFormatException e) {
@@ -521,16 +480,9 @@ public class Main {
                         }
                     }
                 }
-                if (linhaInvalida) {
-                    linhasComErro++;
-                    if (primeiraLinhaComErro == -1) {
-                        primeiraLinhaComErro = linhaAtual;
-                    }
-                } else {
-                    linhasOk++;
-                }
+                validarLinhas(linhaInvalida, linhaAtual, invalidInput);
             }
-            gravarInvalidInput(file, linhasOk, linhasComErro, primeiraLinhaComErro);
+            gravarInvalidInput(file, invalidInput[0], invalidInput[1], invalidInput[2]);
             return true;
         } catch (FileNotFoundException e) {
             return false;
@@ -540,10 +492,7 @@ public class Main {
     static boolean parseVotosFilme(File file) {
 
         int linhaAtual = 0;
-        int linhasOk = 0;
-        int linhasComErro = 0;
-        int primeiraLinhaComErro = -1;
-        boolean ePrimeiraComErro = true;
+        int[] invalidInput = new int[]{0, 0, -1};
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -561,42 +510,30 @@ public class Main {
                     linhaInvalida = true;
                 } else {
                     try {
-
-                        // Vamos precisar depois
-                        int movieid = 0;
-                        float movieRating = 0;
-                        int movieRatingCount = 0;
-
                         String idStr = partes[0].trim();
                         String ratingStr = partes[1].trim();
                         String ratingCountStr = partes[2].trim();
 
-
-                        if (idStr.isEmpty() || ratingStr.isEmpty() || ratingCountStr.isEmpty()) {
+                        if (temEspacosVazios(idStr, ratingStr, ratingCountStr)) {
                             linhaInvalida = true;
                         } else {
-                            movieid = Integer.parseInt(idStr);
-                            movieRating = Float.parseFloat(ratingStr);
-                            movieRatingCount = Integer.parseInt(ratingCountStr);
+                            int movieid = Integer.parseInt(idStr);
+                            float movieRating = Float.parseFloat(ratingStr);
+                            int movieRatingCount = Integer.parseInt(ratingCountStr);
+
+                            // Falta adicionar os votos
+
                         }
 
                     } catch (NumberFormatException e) {
                         linhaInvalida = true;
                     }
                 }
-                if (linhaInvalida) {
-                    linhasComErro++;
-                    if (primeiraLinhaComErro == -1) {
-                        primeiraLinhaComErro = linhaAtual;
-                    }
-                } else {
-                    linhasOk++;
-                }
+                validarLinhas(linhaInvalida, linhaAtual, invalidInput);
             }
-            gravarInvalidInput(file, linhasOk, linhasComErro, primeiraLinhaComErro);
+            gravarInvalidInput(file, invalidInput[0], invalidInput[1], invalidInput[2]);
             return true;
-        } catch (
-                FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             return false;
         }
     }
