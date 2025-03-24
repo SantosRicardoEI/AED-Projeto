@@ -170,7 +170,8 @@ public class Main {
     static void atualizarIdsEPosicoesFilmes() {
         idsFilmes.clear();
         posicoesFilmes.clear();
-        for (int i = 0; i < filmes.size(); i++) {
+        int filmesSize = filmes.size();
+        for (int i = 0; i < filmesSize; i++) {
             idsFilmes.add(filmes.get(i).id);
             posicoesFilmes.add(i);
         }
@@ -206,6 +207,7 @@ public class Main {
         filmes.clear();
 
         List<Integer> idsEncontrados = new ArrayList<>();
+        boolean[] idVisto = new boolean[1_000_000];
 
         int linhaAtual = 0;
         int[] invalidInput = new int[]{0, 0, -1};
@@ -252,9 +254,10 @@ public class Main {
                                 movieBudget = Float.parseFloat(budgetStr);
                                 releaseDate = dateStr;
 
+
                                 boolean filmeDuplicado = idsEncontrados.contains(movieid);
-                                if (!filmeDuplicado) {
-                                    idsEncontrados.add(movieid);
+                                if (!idVisto[movieid]) {
+                                    idVisto[movieid] = true;
                                     Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
                                     filmes.add(filme);
                                 }
@@ -313,7 +316,8 @@ public class Main {
                                 char gender = genderStr.charAt(0);
                                 int movieid = Integer.parseInt(movieIdStr);
 
-                                for (int i = 0; i < idsFilmes.size(); i++) {
+                                int idsFilmesSize = idsFilmes.size();
+                                for (int i = 0; i < idsFilmesSize; i++) {
                                     if (idsFilmes.get(i) == movieid) {
                                         filmes.get(posicoesFilmes.get(i)).numeroAtores++;
                                         break;
