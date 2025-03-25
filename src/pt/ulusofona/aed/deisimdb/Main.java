@@ -25,16 +25,6 @@ class Filme {
     int ratingCount;
     int numeroAtores;
 
-    public Filme(int id, String name, String release) {
-        this.id = id;
-        this.name = name;
-        this.release = release;
-        this.genres = new ArrayList<>();
-        this.rating = 0.0f;
-        this.ratingCount = 0;
-    }
-
-
     public Filme(int id, String name, String release, float duration, float budget) {
         this.id = id;
         this.name = name;
@@ -139,9 +129,6 @@ class InvalidInput {
     int invalidLines;
     int firstErrorLine;
 
-    public InvalidInput() {
-    }
-
     public InvalidInput(String fileName, int validLines, int invalidLines, int firstErrorLine) {
         this.fileName = fileName;
         this.validLines = validLines;
@@ -155,7 +142,49 @@ class InvalidInput {
     }
 }
 
+class IdPosicaoFilme {
+    ArrayList<Integer> ids = new ArrayList<>();
+    ArrayList<Integer> posicoes = new ArrayList<>();
+
+    void adicionar(int id, int posicao) {
+        ids.add(id);
+        posicoes.add(posicao);
+    }
+
+    int procurarPosicao(int id) {
+        for (int i = 0; i < ids.size(); i++) {
+            if (ids.get(i) == id) {
+                return posicoes.get(i);
+            }
+        }
+        return -1;
+    }
+
+    void limpar() {
+        ids.clear();
+        posicoes.clear();
+    }
+}
+
+/* Tentativas de otimização:
+
+   - Em vez de chamar .size na condição do ciclo (é verificado a cada volta) guardar o valor numa variável antes para usar sem chamar .size() tantas vezes
+   - Em ParseFilmes usamos um array de boolean em que cada o o indice representa o id do filme, o valor guardado é se aquele id já foi visto, se nao foi marca-o como visto (true). (Duplicados)
+   - Classe idPosicaoFilme:
+        - Adiciona id à lista de ids e adiciona a posicao de esse id na lista de posicoes (Arrays paralelos).
+        - A correspondencia de elementos entre as listas está no indice.
+   -
+
+
+*/
 public class Main {
+
+    static String ficheiroFilmes = "movies.csv";
+    static String ficheiroAtores = "actors.csv";
+    static String ficheiroGeneros = "genres.csv";
+    static String ficheiroRealizadores = "directors.csv";
+    static String ficheiroGenerosFilmes = "genres_movies.csv";
+    static String ficheiroVotosFilmes = "movie_votes.csv";
 
     static ArrayList<Filme> filmes = new ArrayList<Filme>();
     static ArrayList<Ator> atores = new ArrayList<Ator>();
@@ -163,17 +192,13 @@ public class Main {
     static ArrayList<Realizador> realizadores = new ArrayList<Realizador>();
     static ArrayList<InvalidInput> invalidInputs = new ArrayList<InvalidInput>() {
     };
-
-    static ArrayList<Integer> idsFilmes = new ArrayList<>();
-    static ArrayList<Integer> posicoesFilmes = new ArrayList<>();
+    static IdPosicaoFilme idPosicaoFilme = new IdPosicaoFilme();
 
     static void atualizarIdsEPosicoesFilmes() {
-        idsFilmes.clear();
-        posicoesFilmes.clear();
+        idPosicaoFilme.limpar();
         int filmesSize = filmes.size();
         for (int i = 0; i < filmesSize; i++) {
-            idsFilmes.add(filmes.get(i).id);
-            posicoesFilmes.add(i);
+            idPosicaoFilme.adicionar(filmes.get(i).id, i);
         }
     }
 
@@ -206,7 +231,6 @@ public class Main {
 
         filmes.clear();
 
-        List<Integer> idsEncontrados = new ArrayList<>();
         boolean[] idVisto = new boolean[1_000_000];
 
         int linhaAtual = 0;
@@ -254,8 +278,6 @@ public class Main {
                                 movieBudget = Float.parseFloat(budgetStr);
                                 releaseDate = dateStr;
 
-
-                                boolean filmeDuplicado = idsEncontrados.contains(movieid);
                                 if (!idVisto[movieid]) {
                                     idVisto[movieid] = true;
                                     Filme filme = new Filme(movieid, movieName, releaseDate, movieDuration, movieBudget);
@@ -316,12 +338,9 @@ public class Main {
                                 char gender = genderStr.charAt(0);
                                 int movieid = Integer.parseInt(movieIdStr);
 
-                                int idsFilmesSize = idsFilmes.size();
-                                for (int i = 0; i < idsFilmesSize; i++) {
-                                    if (idsFilmes.get(i) == movieid) {
-                                        filmes.get(posicoesFilmes.get(i)).numeroAtores++;
-                                        break;
-                                    }
+                                int pos = idPosicaoFilme.procurarPosicao(movieid);
+                                if (pos != -1) {
+                                    filmes.get(pos).numeroAtores++;
                                 }
 
                                 atores.add(new Ator(id, name, gender, movieid));
@@ -550,12 +569,12 @@ public class Main {
         generos.clear();
         invalidInputs.clear();
 
-        return parseFilmes(new File(pasta, "movies.csv")) &&
-                parseAtores(new File(pasta, "actors.csv")) &&
-                parseRealizadores(new File(pasta, "directors.csv")) &&
-                parseGeneros(new File(pasta, "genres.csv")) &&
-                parseGeneroDoFilme(new File(pasta, "genres_movies.csv")) &&
-                parseVotosFilme(new File(pasta, "movie_votes.csv"));
+        return parseFilmes(new File(pasta, ficheiroFilmes)) &&
+                parseAtores(new File(pasta, ficheiroAtores)) &&
+                parseRealizadores(new File(pasta, ficheiroRealizadores)) &&
+                parseGeneros(new File(pasta, ficheiroGeneros)) &&
+                parseGeneroDoFilme(new File(pasta, ficheiroGenerosFilmes)) &&
+                parseVotosFilme(new File(pasta, ficheiroVotosFilmes));
     }
 
 
@@ -568,21 +587,6 @@ public class Main {
             case FILME -> filmes;
             case INPUT_INVALIDO -> invalidInputs;
         };
-    }
-
-    static void testarSubstrings() {
-        Filme filme = new Filme(149, "À deriva na Lusofona", "07-02-1998");
-        Ator ator = new Ator(167, "Júlio Andor", 'm', 479);
-        GeneroCinematografico genero = new GeneroCinematografico(66, "Terror");
-        Realizador realizador = new Realizador(4, "Thomas", 80);
-        InvalidInput invalid = new InvalidInput("movies.csv", 80, 2, 34);
-
-        System.out.println("\nTestes toString():");
-        System.out.println("\nFilme: \n" + filme);
-        System.out.println("\nAtor: \n" + ator);
-        System.out.println("\nGenero: \n" + genero);
-        System.out.println("\nRealizador: \n" + realizador);
-        System.out.println("\nInvalid: \n" + invalid);
     }
 
     static void imprimirListaEntidade(TipoEntidade entidade) {
