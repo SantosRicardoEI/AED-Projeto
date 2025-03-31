@@ -1,5 +1,6 @@
 package pt.ulusofona.aed.deisimdb;
 
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ enum TipoEntidade {
     FILME,
     INPUT_INVALIDO
 }
+
 
 class Filme {
     int id;
